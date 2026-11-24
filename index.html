@@ -75,11 +75,12 @@
     animation:coverIn .6s .12s ease-out both;
   }
   .cover-btns{
-    position:relative;margin-top:38px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap;
+    position:relative;margin-top:38px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+    max-width:430px;margin-left:auto;margin-right:auto;
     animation:coverIn .6s .24s ease-out both;
   }
   .cover-btn{
-    min-width:180px;min-height:56px;padding:10px 30px;
+    min-width:196px;min-height:56px;padding:10px 22px;
     font-size:18px;font-weight:700;letter-spacing:6px;text-indent:6px;cursor:pointer;
     border-radius:6px;transition:transform .15s ease,box-shadow .15s ease,background .15s ease;
   }
@@ -87,10 +88,6 @@
   .cover-btn.ghost:hover{background:rgba(217,180,106,.1);transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.4);}
   .cover-btn.solid{background:var(--gold);color:#14171c;border:1px solid var(--gold);}
   .cover-btn.solid:hover{background:#e6c47e;transform:translateY(-2px);box-shadow:0 8px 26px rgba(217,180,106,.25);}
-  .cover-foot{
-    position:relative;margin-top:36px;font-size:12.5px;color:var(--ink-dim);letter-spacing:1px;
-    animation:coverIn .6s .36s ease-out both;
-  }
   @keyframes coverIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
 
   /* ---------- 势力选择 ---------- */
@@ -576,7 +573,6 @@
     .cover-sub{font-size:13px;letter-spacing:1px;}
     .cover-btn{min-width:140px;min-height:52px;font-size:16px;}
     .cover-seal{right:14px;bottom:14px;width:52px;height:52px;font-size:16px;}
-    .cover-foot{font-size:12px;}
     #pick{padding:22px 0 12px;}
     .pick-cards{grid-template-columns:1fr;gap:12px;}
     .f-name{font-size:24px;}
@@ -600,6 +596,17 @@
     <p class="pvp-line1" id="pvpWho">轮到对方布置</p>
     <p class="pvp-line2">把鼠标交给对面那位，点确定后由他操作；他看到的是自己那一侧的手牌。</p>
     <button id="pvpOk" class="cover-btn solid" type="button">交给对方</button>
+  </div>
+</div>
+<div id="netDown" class="pvp-wrap" hidden>
+  <div class="pvp-card">
+    <p class="pvp-line1">联机要用完整版</p>
+    <p class="pvp-line2">联机对战需要一台一直开着的服务器，这里只能放静态页面，所以点联机连不上。</p>
+    <p class="pvp-line2">想联机就用下面这个地址打开，手机电脑都行。</p>
+    <p class="pvp-line2" style="color:#d9b46a;font-weight:700;letter-spacing:.5px;margin-top:-6px">62.234.74.74:8080</p>
+    <p class="pvp-line2">留在这里可以打电脑，也可以两人同屏轮流玩。</p>
+    <button id="netDownGo" class="cover-btn solid" type="button" style="margin-bottom:10px">去联机版</button>
+    <button id="netDownOk" class="cover-btn ghost" type="button">留在这里玩本地双人</button>
   </div>
 </div>
 <div id="selftest"></div>
@@ -627,7 +634,6 @@
       <button id="coverPvp" class="cover-btn ghost" type="button">双人同屏</button>
       <button id="coverNet" class="cover-btn ghost" type="button">联机对战</button>
     </div>
-    <p class="cover-foot">本版本可玩势力：蜀汉 · 曹魏 · 孙权军 · 董卓军</p>
   </div>
 </section>
 
@@ -817,14 +823,14 @@ const CARD_POOL = {
     {name:'甘宁',   cost:3, atk:4, hp:5, color:null,     skill:'ganning',   desc:'优先打敌方本营的将，本营没将才打战线'},
     {name:'太史慈', cost:4, atk:5, hp:4, color:null,     skill:'taishici',  desc:'被攻击打死的那一次，反击伤害等于对方这次造成的伤害'},
     {name:'凌统',   cost:3, atk:2, hp:3, color:null,     skill:'lingtong',  desc:'队友阵亡时自己阵亡，把该队友以3血复活在原格'},
-    {name:'孙尚香', cost:2, atk:1, hp:1, color:null,     skill:'sunshangxiang', desc:'攻击前，给血量最低的一名队友+2血（不包括自己）'},
+    {name:'孙尚香', cost:2, atk:1, hp:1, color:null,     skill:'sunshangxiang', desc:'结算开始：给血量最低的一名队友+2血（不含自己），本营也发动'},
     {name:'韩当',   cost:2, atk:1, hp:2, color:'blue',   skill:'handang',   desc:'不攻击；每回合自己+3血'},
     {name:'鲁肃',   cost:3, atk:1, hp:4, color:'red',    skill:'lusu',      desc:'不攻击；每回合己方+5粮草，对方+1'},
     {name:'程普',   cost:2, atk:1, hp:4, color:null,     skill:'mirror',    desc:'反击伤害等于攻击方本该造成的反击伤害（含对方反击技）'}
   ],
   dong: [
     {name:'吕布',   cost:12, atk:9, hp:12, color:null,    skill:'lvbu',      desc:'本次攻击若击杀对方，再攻击一次（只追加一次，不连锁）'},
-    {name:'华雄',   cost:5, atk:4, hp:12, color:null,    skill:'huaxiong',  desc:'每回合开始扣自己2血'},
+    {name:'华雄',   cost:6, atk:4, hp:12, color:null,    skill:'huaxiong',  desc:'每回合开始扣自己2血'},
     {name:'李儒',   cost:5, atk:1, hp:6, color:'red',    skill:'liru',      desc:'结算开始：己方在场将-1血、敌方在场将-2血；敌主帅再掉自己本回合已损失的血'},
     {name:'张济',   cost:5, atk:3, hp:3, color:null,     skill:'zhangji',   desc:'死亡后扣2粮草由张绣在原格占位，粮草不够就不上（张绣：单次受到的伤害-1）'},
     {name:'徐荣',   cost:4, atk:2, hp:5, color:null,     skill:'xurong',    desc:'每受到一次伤害，攻击力永久+1'},
@@ -1398,6 +1404,21 @@ const Engine = {
               this.dealToUnit(l, r, 2, {kind:'skill', side:u.owner, unit:u});
               if(u.hp <= 0){ this.log(u.name + ' 自残阵亡（战线' + (l+1) + '）', 'death'); this.kill(l, r); }
               break;
+            case 'sunshangxiang': {
+              let low = null;
+              for(let ll=0; ll<CONFIG.LANES; ll++){
+                for(const rr of rows){
+                  const f = st.board[ll][rr];
+                  if(f && f.id !== u.id && (!low || f.hp < low.hp)) low = f;
+                }
+              }
+              if(low && low.hp < low.maxHp){
+                low.hp = Math.min(low.maxHp, low.hp + 2);
+                this.syncWounded(low);
+                this.skillLog(u, low.name + ' +2血');
+              }
+              break;
+            }
             case 'handang':
               u.noAttack = true; u.hp += 3; u.maxHp += 3;
               this.skillLog(u, '自己+3血，本回合不攻击');
@@ -1531,22 +1552,6 @@ const Engine = {
     const defSide = atkSide === 'shu' ? 'wei' : 'shu';
     const aRow = ROW[atkSide].front;
     const dF = ROW[defSide].front, dH = ROW[defSide].home;
-
-    /* 孙尚香【弓腰】：攻击前给血量最低队友+2血（不含自己） */
-    if(a.skill === 'sunshangxiang'){
-      let low = null;
-      for(let ll=0; ll<CONFIG.LANES; ll++){
-        for(const rr of [ROW[atkSide].front, ROW[atkSide].home]){
-          const f = st.board[ll][rr];
-          if(f && f.id !== a.id && (!low || f.hp < low.hp)) low = f;
-        }
-      }
-      if(low && low.hp < low.maxHp){
-        low.hp = Math.min(low.maxHp, low.hp + 2);
-        this.syncWounded(low);
-        this.skillLog(a, low.name + ' +2血');
-      }
-    }
 
     /* 周瑜【赤壁】：攻击前敌方所有战线将掉1血，不触发反击 */
     if(a.skill === 'zhouyu' && this.colorMatch(a)){
@@ -2336,18 +2341,24 @@ const UI = {
       self.showScreen('cover');
       NET.panel(true);
       if(NET.isFile()){
-        NET.tip('现在是用文件方式打开的（地址栏是 file:// 开头），联机连不了。' +
-                '请关掉这个页面，双击 D:\pythonwww\开始局域网.bat，用它打开的 http://localhost:8080 这个页面。', 'bad');
+        NET.panel(false);
+        document.getElementById('netDown').hidden = false;
         return;
       }
       const info = await NET.probe();
       if(!info || !info.ok){
-        NET.tip('没连上本地服务。请先双击 开始局域网.bat（黑窗口别关），' +
-                '再从它打印的地址打开本页。', 'bad');
+        NET.panel(false);
+        document.getElementById('netDown').hidden = false;
         return;
       }
       const url = 'http://' + ((info.ips && info.ips[0]) || location.hostname) + ':' + (location.port || 80);
       NET.tip('服务正常。手机打开：' + url + ' → 点「联机对战」→「加入房间」。', 'ok');
+    });
+    document.getElementById('netDownGo').addEventListener('click', function(){
+      location.href = 'http://62.234.74.74:8080/';
+    });
+    document.getElementById('netDownOk').addEventListener('click', function(){
+      document.getElementById('netDown').hidden = true;
     });
     document.getElementById('netBack').addEventListener('click', function(){ NET.panel(false); });
     document.getElementById('netHost').addEventListener('click', async function(){
