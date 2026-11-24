@@ -889,7 +889,7 @@ const SKILL_NAME = {
   tianfeng:'毒士', jushou:'缓兵', shenpei:'坚守', yanliang:'先锋',
   wenchou:'死战', zhanghe:'巧变', gaolan:'望楼', quyi:'先登死士',
   chunyuqiong:'宿将', guotu:'党争', gaogan:'死节', xuyou:'贪贿',
-  simafu:'鹰视狼顾', simashi:'废立', simazhao:'昭然', dengai:'偷渡',
+  simafu:'守成', simashi:'废立', simazhao:'昭然', dengai:'偷渡',
   zhonghui:'谋逆', zhonghui2:'', yanghu:'怀柔', duyu:'势如破竹',
   wangjun:'顺流', jiachong:'构陷', weiguan:'监军', shibao:'突袭', zhanghua:'文治'
 };
@@ -1629,6 +1629,15 @@ const Engine = {
               }
               break;
             }
+            case 'duyu': {
+              const foeSide = side === 'shu' ? 'wei' : 'shu';
+              const fl = st.board[l][ROW[foeSide].front], hl = st.board[l][ROW[foeSide].home];
+              if(!fl && !hl){
+                this.hitHero(foeSide, 2, side);
+                this.skillLog(u, (l + 1) + ' 号线无人拦路：敌方主帅 -2 血');
+              }
+              break;
+            }
             case 'simafu': {
               const si2 = side === 'shu' ? 'wei' : 'shu';
               const mine2 = s.supply, foe2s = st.sides[si2].supply;
@@ -1649,7 +1658,7 @@ const Engine = {
               for(let ll=0; ll<CONFIG.LANES; ll++){
                 for(const rr of rows){ const f = st.board[ll][rr]; if(f && (!low || f.hp < low.hp)) low = f; }
               }
-              if(low){ low.hp = Math.min(low.maxHp, low.hp + 1); this.syncWounded(low); this.skillLog(u, '血量最低的 ' + low.name + ' +1 血'); }
+              if(low && !this.healBlocked()){ low.hp += 1; low.maxHp += 1; this.syncWounded(low); this.skillLog(u, '血量最低的 ' + low.name + ' +1 血'); }
               break;
             }
             case 'jiachong': {
@@ -1670,7 +1679,7 @@ const Engine = {
                 let got = 0;
                 for(let ll=0; ll<CONFIG.LANES; ll++){
                   const f = st.board[ll][ROW[side].front];
-                  if(f){ f.hp = Math.min(f.maxHp, f.hp + 1); this.syncWounded(f); got++; }
+                  if(f && !this.healBlocked()){ f.hp += 1; f.maxHp += 1; this.syncWounded(f); got++; }
                 }
                 s.supply += 1;
                 if(got) this.skillLog(u, '监军（第 ' + u.wgCount + ' 次）：战线 ' + got + ' 名将 +1 血，己方 +1 粮');
@@ -1995,7 +2004,6 @@ const Engine = {
     }else{
       /* 两条都空：直取主帅，主帅不反击 */
       if(a.skill === 'heroPlus2' && this.colorMatch(a)){ dmg += 2; this.skillLog(a, '打主帅伤害+2'); }
-      if(a.skill === 'duyu'){ dmg += 2; this.skillLog(a, '势如破竹：无人拦路，主帅多受 2 点'); }
       if(a.skill === 'wangjun'){ dmg += 1; st.sides[atkSide].supply += 1; this.skillLog(a, '顺流：主帅 +1 伤害，己方 +1 粮'); }
       this.log(a.name + ' 直取' + this.sideName(defSide) + '方主帅，造成 ' + dmg + ' 点', 'hero');
       yield {t:'attack', lane:lane, from:aRow, hero:defSide};
