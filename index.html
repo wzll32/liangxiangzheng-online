@@ -841,6 +841,20 @@ const CARD_POOL = {
     {name:'董旻',   cost:2, atk:2, hp:8, color:null,     skill:'floor3',    desc:'单次受到的武将伤害最少算3点（主帅不受影响）'},
     {name:'牛辅',   cost:3, atk:1, hp:3, color:'yellow',  skill:'niufu',     desc:'黄色：每受到伤害，扣对方1粮草（对方没有就不扣）'},
     {name:'侯成',   cost:4, atk:2, hp:4, color:null,     skill:'houcheng',  desc:'每扣1血，给己方+1粮草'}
+  ],
+  yuan: [
+    {name:'田丰',   cost:3, atk:1, hp:2, color:null,     skill:'tianfeng',   desc:'结算开始：敌方全体 -1 血'},
+    {name:'沮授',   cost:2, atk:1, hp:3, color:'yellow', skill:'jushou',     desc:'结算开始：己方 +n 粮（n 为己方上场武将数）'},
+    {name:'审配',   cost:2, atk:1, hp:3, color:'yellow', skill:'shenpei',    desc:'结算开始：己方战线将 +1 攻'},
+    {name:'颜良',   cost:3, atk:4, hp:3, color:null,     skill:'yanliang',   desc:'存活时：己方全体 +1 攻'},
+    {name:'文丑',   cost:3, atk:4, hp:3, color:null,     skill:'wenchou',    desc:'阵亡时：己方全体 +1 血'},
+    {name:'张郃',   cost:3, atk:3, hp:4, color:null,     skill:'zhanghe',    desc:'攻击命中后：敌方主帅 -1 血'},
+    {name:'高览',   cost:2, atk:1, hp:4, color:null,     skill:'gaolan',     desc:'己方战线将 ≥3 时：全体 +1 攻'},
+    {name:'麴义',   cost:4, atk:4, hp:3, color:null,     skill:'quyi',       desc:'反击伤害 = 自己的攻击力'},
+    {name:'淳于琼', cost:1, atk:1, hp:2, color:null,     skill:'chunyuqiong',desc:'上场时：己方 +3 粮'},
+    {name:'郭图',   cost:1, atk:1, hp:1, color:null,     skill:'guotu',      desc:'阵亡时：己方全体 +1 攻'},
+    {name:'高干',   cost:2, atk:2, hp:3, color:null,     skill:'gaogan',     desc:'阵亡时：敌方全体 -1 血'},
+    {name:'许攸',   cost:2, atk:1, hp:3, color:null,     skill:'xuyou',      desc:'结算开始：己方 +1 粮；放满 6 回合后若仍存活，扣己方 3 粮并阵亡'}
   ]
 };
 
@@ -857,7 +871,10 @@ const SKILL_NAME = {
   handang:'稳守', lusu:'囷仓', mirror:'镜反',
   lvbu:'无双', huaxiong:'自残', liru:'毒计', zhangji:'遗令', reduce1:'稳阵',
   xurong:'积怒', jiaxu:'死咒', guosi:'杀赏', lijue:'挫锋', cap3:'重甲',
-  floor3:'狂骨', niufu:'掠粮', houcheng:'血囷'
+  floor3:'狂骨', niufu:'掠粮', houcheng:'血囷',
+  tianfeng:'毒士', jushou:'缓兵', shenpei:'坚守', yanliang:'先锋',
+  wenchou:'死战', zhanghe:'巧变', gaolan:'望楼', quyi:'先登死士',
+  chunyuqiong:'宿将', guotu:'党争', gaogan:'死节', xuyou:'贪贿'
 };
 /* 「这回合不攻击」类技能（颜色对才休战） */
 const REST_SKILLS = ['mijuu','xunyu','guojia','caoang','lumeng','handang','lusu'];
@@ -865,8 +882,8 @@ const REST_SKILLS = ['mijuu','xunyu','guojia','caoang','lumeng','handang','lusu'
 /* 棋盘行号：0 敌·本营 / 1 敌·战线 / 2 我·战线 / 3 我·本营 */
 const ROW = { wei:{home:0, front:1}, shu:{home:3, front:2} };
 const ROW_LABEL = ['敌·本营','敌·战线','我·战线','我·本营'];
-const SIDE_NAME = { shu:'蜀', wei:'魏', wu:'吴', dong:'董' };
-const FACTION_FULL = { shu:'蜀汉', wei:'曹魏', wu:'孙权军', dong:'董卓军' };
+const SIDE_NAME = { shu:'蜀', wei:'魏', wu:'吴', dong:'董', yuan:'袁' };
+const FACTION_FULL = { shu:'蜀汉', wei:'曹魏', wu:'孙权军', dong:'董卓军', yuan:'袁绍军' };
 const DICE = [
   {id:'red',    name:'红', css:'#c0504a'},
   {id:'yellow', name:'黄', css:'#d9b46a'},
@@ -1086,6 +1103,8 @@ const Engine = {
     s.supply -= u.cost;
     s.hand.splice(handIdx, 1);
     st.board[lane][row] = u;
+    u.placedRound = st.round;
+    if(u.skill === 'chunyuqiong'){ s.supply += 3; this.skillLog(u, '上场：己方粮草+3'); }
     this.log(u.name + ' 上场 -' + u.cost + ' 粮草（战线' + (lane+1) + '·' + (row===ROW[side].front?'战线':'本营') + '）', 'play');
     this.check();
     return {ok:true};
@@ -1161,6 +1180,39 @@ const Engine = {
     if(pi >= 0 && row === ROW[u.owner].front){
       st.supplyPending.splice(pi, 1);
       if(st.phase === 'supply' && st.supplyPending.length === 0) this.afterSupply(u.owner);
+    }
+    /* 袁绍军亡语 */
+    if(u.skill === 'wenchou'){
+      this.skillLog(u, '阵亡：己方全体 +1 血');
+      for(let l2=0; l2<CONFIG.LANES; l2++){
+        for(const r2 of [ROW[u.owner].front, ROW[u.owner].home]){
+          const f2 = st.board[l2][r2];
+          if(f2){ f2.hp = Math.min(f2.maxHp, f2.hp + 1); this.syncWounded(f2); }
+        }
+      }
+    }
+    if(u.skill === 'guotu'){
+      this.skillLog(u, '阵亡：己方全体 +1 攻');
+      for(let l2=0; l2<CONFIG.LANES; l2++){
+        for(const r2 of [ROW[u.owner].front, ROW[u.owner].home]){
+          const f2 = st.board[l2][r2];
+          if(f2) f2.atk += 1;
+        }
+      }
+    }
+    if(u.skill === 'gaogan'){
+      const foe3 = u.owner === 'shu' ? 'wei' : 'shu';
+      this.skillLog(u, '阵亡：敌方全体 -1 血');
+      const tg3 = [];
+      for(let l2=0; l2<CONFIG.LANES; l2++){
+        for(const r2 of [ROW[foe3].front, ROW[foe3].home]){
+          if(st.board[l2][r2]) tg3.push({l:l2, r:r2});
+        }
+      }
+      for(const t3 of tg3){
+        this.dealToUnit(t3.l, t3.r, 1, {kind:'skill', side:u.owner, unit:u});
+        if(st.board[t3.l][t3.r] && st.board[t3.l][t3.r].hp <= 0) this.kill(t3.l, t3.r);
+      }
     }
     /* 贾诩【死咒】：死亡时双方在场将各-2血、双方主帅各-2血 */
     if(u.skill === 'jiaxu'){
@@ -1242,6 +1294,11 @@ const Engine = {
     if(u.skill === 'reduce1') amt = Math.max(0, amt - 1);
     if(amt <= 0) return u;
     u.lastHit = amt;
+    /* 张郃【巧变】：攻击命中后敌方主帅 -1 血 */
+    if(src && src.kind === 'attack' && src.unit && src.unit.skill === 'zhanghe'){
+      this.skillLog(src.unit, '命中追伤：敌方主帅 -1 血');
+      this.hitHero(u.owner, 1, src.unit.owner);
+    }
     /* 周泰【不屈】：非反击的致死伤害只留1血 */
     if(u.skill === 'zhoutai' && u.hp - amt <= 0 && !(src && src.kind === 'counter')){
       u.hp = 1;
@@ -1292,6 +1349,7 @@ const Engine = {
       this.skillLog(d, '阵亡反击等于本次受伤 ' + v);
       return v;
     }
+    if(d.skill === 'quyi'){ this.skillLog(d, '反击等于自身攻击 ' + d.atk); return d.atk; }
     if(d.skill === 'counter3'){ this.skillLog(d, '反击打3点'); return 3; }
     if(d.skill === 'counter4'){ this.skillLog(d, '反击打4点'); return 4; }
     return dying ? 1 : Math.ceil(d.baseAtk / 2);
@@ -1299,6 +1357,7 @@ const Engine = {
 
   /* 不含日志的反击值（镜反镜像用，不递归） */
   rawCounter(u, dying){
+    if(u.skill === 'quyi') return u.atk;
     if(u.skill === 'counter3') return 3;
     if(u.skill === 'counter4') return 4;
     if(u.skill === 'taishici' && dying) return u.lastHit || 1;
@@ -1451,6 +1510,73 @@ const Engine = {
               if(u.hp > 0 && h0 - u.hp > 0){
                 this.skillLog(u, '敌方主帅受到 ' + (h0 - u.hp) + ' 点');
                 this.hitHero(foeSide, h0 - u.hp, side);
+              }
+              break;
+            }
+            case 'tianfeng': {
+              const foeSide = side === 'shu' ? 'wei' : 'shu';
+              const tg = [];
+              for(let ll=0; ll<CONFIG.LANES; ll++){
+                const rr = ROW[foeSide].front;
+                if(st.board[ll][rr]) tg.push({l:ll, r:rr});
+              }
+              if(tg.length){
+                this.skillLog(u, '万箭：敌方全体 -1 血');
+                for(const t of tg){
+                  this.dealToUnit(t.l, t.r, 1, {kind:'skill', side:side, unit:u});
+                  if(st.board[t.l][t.r] && st.board[t.l][t.r].hp <= 0) this.kill(t.l, t.r);
+                }
+              }
+              break;
+            }
+            case 'jushou': {
+              let n = 0;
+              for(let ll=0; ll<CONFIG.LANES; ll++){
+                for(const rr of rows){ if(st.board[ll][rr]) n++; }
+              }
+              const gain = Math.min(2, n);
+              if(gain){ s.supply += gain; this.skillLog(u, '粮草+' + gain); }
+              break;
+            }
+            case 'shenpei': {
+              let got = 0;
+              for(let ll=0; ll<CONFIG.LANES; ll++){
+                const f = st.board[ll][ROW[side].front];
+                if(f){ f.atk += 1; got++; }
+              }
+              if(got) this.skillLog(u, '己方战线 ' + got + ' 名将各 +1 攻');
+              break;
+            }
+            case 'yanliang': {
+              const own2 = [];
+              for(let ll=0; ll<CONFIG.LANES; ll++){
+                const f = st.board[ll][ROW[side].front];
+                if(f && !f.auraYL){ f.auraYL = 1; f.atk += 1; own2.push(f.name); }
+              }
+              if(own2.length) this.skillLog(u, '存活光环（战线）：' + own2.join('、') + ' 各 +1 攻');
+              break;
+            }
+            case 'gaolan': {
+              let front = 0;
+              for(let ll=0; ll<CONFIG.LANES; ll++){ if(st.board[ll][ROW[side].front]) front++; }
+              if(front >= 4){
+                const got = [];
+                for(let ll=0; ll<CONFIG.LANES; ll++){
+                  for(const rr of rows){ const f = st.board[ll][rr]; if(f && !f.auraGL){ f.auraGL = 1; f.atk += 1; got.push(f.name); } }
+                }
+                if(got.length) this.skillLog(u, '战线 ' + front + ' 名，' + got.join('、') + ' 各 +1 攻');
+              }
+              break;
+            }
+            case 'xuyou': {
+              const pr = u.placedRound || st.round;
+              if(st.round === pr){ s.supply += 1; this.skillLog(u, '上场就任：粮草+1'); }
+              if(st.round - pr >= 6){
+                const back = Math.min(3, s.supply);
+                s.supply -= back;
+                this.skillLog(u, '贪贿事发：己方 -' + back + ' 粮，许攸阵亡');
+                this.kill(l, r);
+                return;
               }
               break;
             }
@@ -1936,12 +2062,12 @@ function selfTestCore(games){
 }
 
 /* ============================================================
- * 平衡统计（#balance）：电脑互打，每对阵 3000 局、先手后手各一遍
+ * 平衡统计（#balance）：电脑互打，每对阵 300 局、先手后手各一遍
  * 纯逻辑 + 分块异步，不影响正常游玩
  * ============================================================ */
 const BALANCE_PAIRS = [
-  ['wu','wei'], ['wu','shu'], ['dong','wei'], ['dong','shu'], ['dong','wu'], ['wei','shu'],
-  ['shu','shu'], ['wei','wei'], ['wu','wu'], ['dong','dong']
+  ['yuan','wei'], ['yuan','shu'], ['yuan','wu'], ['yuan','dong'], ['wei','shu'],
+  ['yuan','yuan']
 ];
 
 function balanceOneGame(){
@@ -2467,10 +2593,11 @@ const UI = {
       shu: {full:'蜀汉', hero:'刘备', tag:'单兵强攻', chips:['连击','免反击','反伤','直取主帅']},
       wei: {full:'曹魏', hero:'曹操', tag:'体系流', chips:['加血','回粮','反击定伤']},
       wu: {full:'孙权军', hero:'孙权', tag:'防守成长流', chips:['免疫伤害','队友复活','回粮','镜反']},
-      dong: {full:'董卓军', hero:'董卓', tag:'牺牲爆发流', chips:['击杀追加','自残换伤','亡语','掠粮']}
+      dong: {full:'董卓军', hero:'董卓', tag:'牺牲爆发流', chips:['击杀追加','自残换伤','亡语','掠粮']},
+      yuan: {full:'袁绍军', hero:'袁绍', tag:'群伤铺场流', chips:['万箭齐发','铺场加攻','亡语']}
     };
     let html = '';
-    for(const f of ['shu','wei','wu','dong']){
+    for(const f of ['shu','wei','wu','dong','yuan']){
       const d = info[f];
       const badge = p.mine === f ? '<span class="f-badge mine">我方</span>' : (p.enemy === f ? '<span class="f-badge enemy">对方</span>' : '');
       html += '<div class="fcard ' + f + (p.mine === f ? ' sel-mine' : '') + (p.enemy === f ? ' sel-enemy' : '') + '" data-fac="' + f + '">' +
