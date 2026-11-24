@@ -111,6 +111,8 @@
   .fcard.wei{--fac:#c97f6d;--fac-glow:rgba(176,96,79,.14);}
   .fcard.wu{--fac:#7fa8c9;--fac-glow:rgba(90,127,168,.16);}
   .fcard.dong{--fac:#b08fc9;--fac-glow:rgba(159,134,192,.14);}
+.fcard.yuan{--fac:#c0a062;--fac-glow:rgba(192,160,98,.14);}
+.fcard.si{--fac:#8f9bb3;--fac-glow:rgba(143,155,179,.16);}
   .fcard:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,.45);}
   .fcard.sel-mine{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 12px 30px rgba(0,0,0,.45);}
   .fcard.sel-enemy{border-color:var(--wei);box-shadow:0 0 0 1px var(--wei),0 12px 30px rgba(0,0,0,.45);}
@@ -900,7 +902,7 @@ const REST_SKILLS = ['mijuu','xunyu','guojia','caoang','lumeng','handang','lusu'
 const ROW = { wei:{home:0, front:1}, shu:{home:3, front:2} };
 const ROW_LABEL = ['敌·本营','敌·战线','我·战线','我·本营'];
 const SIDE_NAME = { shu:'刘', wei:'曹', wu:'吴', dong:'董', yuan:'袁', si:'司' };
-const FACTION_FULL = { shu:'刘备军', wei:'曹操军', wu:'孙权军', dong:'董卓军', yuan:'袁绍军', si:'司马军' };
+const FACTION_FULL = { shu:'刘备军', wei:'曹操军', wu:'孙权军', dong:'董卓军', yuan:'袁绍军', si:'司马懿军' };
 const DICE = [
   {id:'red',    name:'红', css:'#c0504a'},
   {id:'yellow', name:'黄', css:'#d9b46a'},
@@ -1046,12 +1048,6 @@ const Engine = {
   },
 
   check(){ if(this.audit) this.audit(this.state); },
-
-  /* 加血后把上限顶上去：血量不可能超过上限，显示也不会出现 4/3 */
-  fixCap(u){
-    if(u && u.maxHp !== undefined && u.hp > u.maxHp) u.maxHp = u.hp;
-    return u;
-  },
 
   /* 钟会【谋逆】：在场时所有加血失效（敌我双方） */
   healBlocked(){
@@ -1664,7 +1660,7 @@ const Engine = {
               for(let ll=0; ll<CONFIG.LANES; ll++){
                 for(const rr of rows){ const f = st.board[ll][rr]; if(f && (!low || f.hp < low.hp)) low = f; }
               }
-              if(low && !this.healBlocked()){ low.hp += 1; low.maxHp += 1; this.syncWounded(low); this.fixCap(low); this.skillLog(u, '血量最低的 ' + low.name + ' +1 血'); }
+              if(low && !this.healBlocked()){ low.hp += 1; this.syncWounded(low); this.skillLog(u, '血量最低的 ' + low.name + ' +1 血'); }
               break;
             }
             case 'jiachong': {
@@ -1685,7 +1681,7 @@ const Engine = {
                 let got = 0;
                 for(let ll=0; ll<CONFIG.LANES; ll++){
                   const f = st.board[ll][ROW[side].front];
-                  if(f && !this.healBlocked()){ f.hp += 1; f.maxHp += 1; this.syncWounded(f); this.fixCap(f); got++; }
+                  if(f && !this.healBlocked()){ f.hp += 1; this.syncWounded(f); got++; }
                 }
                 s.supply += 1;
                 if(got) this.skillLog(u, '监军（第 ' + u.wgCount + ' 次）：战线 ' + got + ' 名将 +1 血，己方 +1 粮');
@@ -2340,7 +2336,7 @@ Engine.replay = function (seed, playerFaction, enemyFaction, actions) {
  *   房主：唯一算局面的一方，把 state 推给客人
  *   客人：点击只发操作，收到 state 就照着画
  * ============================================================ */
-const FACTION_NAME = { shu:'刘备军', wei:'曹操军', wu:'孙权军', dong:'董卓军', yuan:'袁绍军', si:'司马军' };
+const FACTION_NAME = { shu:'刘备军', wei:'曹操军', wu:'孙权军', dong:'董卓军', yuan:'袁绍军', si:'司马懿军' };
 
 const NET = {
   mode: null,              // 'host' | 'guest'
@@ -2719,7 +2715,7 @@ const UI = {
       wu: {full:'孙权军', hero:'孙权', tag:'防守成长流', chips:['免疫伤害','队友复活','回粮','镜反']},
       dong: {full:'董卓军', hero:'董卓', tag:'牺牲爆发流', chips:['击杀追加','自残换伤','亡语','掠粮']},
       yuan: {full:'袁绍军', hero:'袁绍', tag:'群伤铺场流', chips:['万箭齐发','铺场加攻','亡语']},
-      si: {full:'司马军', hero:'司马懿', tag:'控制消耗流', chips:['禁疗','削攻','偷粮','反噬']}
+      si: {full:'司马懿军', hero:'司马懿', tag:'控制消耗流', chips:['禁疗','削攻','偷粮','反噬']}
     };
     let html = '';
     for(const f of ['shu','wei','wu','dong','yuan','si']){
