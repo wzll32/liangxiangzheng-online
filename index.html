@@ -1047,6 +1047,12 @@ const Engine = {
 
   check(){ if(this.audit) this.audit(this.state); },
 
+  /* 加血后把上限顶上去：血量不可能超过上限，显示也不会出现 4/3 */
+  fixCap(u){
+    if(u && u.maxHp !== undefined && u.hp > u.maxHp) u.maxHp = u.hp;
+    return u;
+  },
+
   /* 钟会【谋逆】：在场时所有加血失效（敌我双方） */
   healBlocked(){
     const st = this.state;
@@ -1658,7 +1664,7 @@ const Engine = {
               for(let ll=0; ll<CONFIG.LANES; ll++){
                 for(const rr of rows){ const f = st.board[ll][rr]; if(f && (!low || f.hp < low.hp)) low = f; }
               }
-              if(low && !this.healBlocked()){ low.hp += 1; low.maxHp += 1; this.syncWounded(low); this.skillLog(u, '血量最低的 ' + low.name + ' +1 血'); }
+              if(low && !this.healBlocked()){ low.hp += 1; low.maxHp += 1; this.syncWounded(low); this.fixCap(low); this.skillLog(u, '血量最低的 ' + low.name + ' +1 血'); }
               break;
             }
             case 'jiachong': {
@@ -1679,7 +1685,7 @@ const Engine = {
                 let got = 0;
                 for(let ll=0; ll<CONFIG.LANES; ll++){
                   const f = st.board[ll][ROW[side].front];
-                  if(f && !this.healBlocked()){ f.hp += 1; f.maxHp += 1; this.syncWounded(f); got++; }
+                  if(f && !this.healBlocked()){ f.hp += 1; f.maxHp += 1; this.syncWounded(f); this.fixCap(f); got++; }
                 }
                 s.supply += 1;
                 if(got) this.skillLog(u, '监军（第 ' + u.wgCount + ' 次）：战线 ' + got + ' 名将 +1 血，己方 +1 粮');
