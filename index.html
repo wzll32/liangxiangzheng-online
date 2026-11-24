@@ -850,7 +850,7 @@ const CARD_POOL = {
     {name:'文丑',   cost:3, atk:4, hp:3, color:null,     skill:'wenchou',    desc:'阵亡时：己方全体 +1 血'},
     {name:'张郃',   cost:3, atk:3, hp:4, color:null,     skill:'zhanghe',    desc:'攻击命中后：敌方主帅 -1 血'},
     {name:'高览',   cost:2, atk:1, hp:4, color:null,     skill:'gaolan',     desc:'己方战线将 ≥3 时：全体 +1 攻'},
-    {name:'麴义',   cost:4, atk:4, hp:3, color:null,     skill:'quyi',       desc:'反击伤害 = 自己的攻击力'},
+    {name:'麴义',   cost:3, atk:3, hp:3, color:null,     skill:'quyi',       desc:'反击伤害 = 自己的攻击力'},
     {name:'淳于琼', cost:1, atk:1, hp:2, color:null,     skill:'chunyuqiong',desc:'上场时：己方 +3 粮'},
     {name:'郭图',   cost:1, atk:1, hp:1, color:null,     skill:'guotu',      desc:'阵亡时：己方全体 +1 攻'},
     {name:'高干',   cost:2, atk:2, hp:3, color:null,     skill:'gaogan',     desc:'阵亡时：敌方全体 -1 血'},
@@ -882,8 +882,8 @@ const REST_SKILLS = ['mijuu','xunyu','guojia','caoang','lumeng','handang','lusu'
 /* 棋盘行号：0 敌·本营 / 1 敌·战线 / 2 我·战线 / 3 我·本营 */
 const ROW = { wei:{home:0, front:1}, shu:{home:3, front:2} };
 const ROW_LABEL = ['敌·本营','敌·战线','我·战线','我·本营'];
-const SIDE_NAME = { shu:'蜀', wei:'魏', wu:'吴', dong:'董', yuan:'袁' };
-const FACTION_FULL = { shu:'蜀汉', wei:'曹魏', wu:'孙权军', dong:'董卓军', yuan:'袁绍军' };
+const SIDE_NAME = { shu:'刘', wei:'曹', wu:'吴', dong:'董', yuan:'袁' };
+const FACTION_FULL = { shu:'刘备军', wei:'曹操军', wu:'孙权军', dong:'董卓军', yuan:'袁绍军' };
 const DICE = [
   {id:'red',    name:'红', css:'#c0504a'},
   {id:'yellow', name:'黄', css:'#d9b46a'},
@@ -1534,8 +1534,7 @@ const Engine = {
               for(let ll=0; ll<CONFIG.LANES; ll++){
                 for(const rr of rows){ if(st.board[ll][rr]) n++; }
               }
-              const gain = Math.min(2, n);
-              if(gain){ s.supply += gain; this.skillLog(u, '粮草+' + gain); }
+              if(n){ s.supply += n; this.skillLog(u, '按在场 ' + n + ' 人，粮草+' + n); }
               break;
             }
             case 'shenpei': {
@@ -1570,7 +1569,8 @@ const Engine = {
             }
             case 'xuyou': {
               const pr = u.placedRound || st.round;
-              if(st.round === pr){ s.supply += 1; this.skillLog(u, '上场就任：粮草+1'); }
+              s.supply += 1;
+              this.skillLog(u, '粮草+1');
               if(st.round - pr >= 6){
                 const back = Math.min(3, s.supply);
                 s.supply -= back;
@@ -2216,7 +2216,7 @@ Engine.replay = function (seed, playerFaction, enemyFaction, actions) {
  *   房主：唯一算局面的一方，把 state 推给客人
  *   客人：点击只发操作，收到 state 就照着画
  * ============================================================ */
-const FACTION_NAME = { shu:'蜀汉', wei:'曹魏', wu:'孙权军', dong:'董卓军' };
+const FACTION_NAME = { shu:'刘备军', wei:'曹操军', wu:'孙权军', dong:'董卓军', yuan:'袁绍军' };
 
 const NET = {
   mode: null,              // 'host' | 'guest'
@@ -2590,8 +2590,8 @@ const UI = {
         : !p.enemy ? '第二步 · 再点另一张势力卡，选对方（不能与我方相同）'
         : '双方已定 · 点「开战」进入棋盘');
     const info = {
-      shu: {full:'蜀汉', hero:'刘备', tag:'单兵强攻', chips:['连击','免反击','反伤','直取主帅']},
-      wei: {full:'曹魏', hero:'曹操', tag:'体系流', chips:['加血','回粮','反击定伤']},
+      shu: {full:'刘备军', hero:'刘备', tag:'单兵强攻', chips:['连击','免反击','反伤','直取主帅']},
+      wei: {full:'曹操军', hero:'曹操', tag:'体系流', chips:['加血','回粮','反击定伤']},
       wu: {full:'孙权军', hero:'孙权', tag:'防守成长流', chips:['免疫伤害','队友复活','回粮','镜反']},
       dong: {full:'董卓军', hero:'董卓', tag:'牺牲爆发流', chips:['击杀追加','自残换伤','亡语','掠粮']},
       yuan: {full:'袁绍军', hero:'袁绍', tag:'群伤铺场流', chips:['万箭齐发','铺场加攻','亡语']}
