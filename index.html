@@ -876,7 +876,7 @@ const CARD_POOL = {
     chan: [
     {name:'姜维',   cost:5, atk:5, hp:6, color:'blue', skill:'zhiji',      desc:'志继：蓝色时自身 +2 血、+1 攻'},
     {name:'诸葛瞻', cost:3, atk:1, hp:3, color:null,   skill:'zhugezhan',  desc:'三罪：黄=自+1血／蓝=自+1攻／红=己方战线将各+1血'},
-    {name:'黄皓',   cost:2, atk:4, hp:4, color:null,   skill:'huanghao',   desc:'壅蔽：黄色时结算开始，己方本营血量最高者 -1 攻（最低 1，不含自己）'},
+    {name:'黄皓',   cost:2, atk:4, hp:4, color:null,   skill:'huanghao',   desc:'壅蔽：黄色时结算开始，己方本营血量最高者 -1 血（不含自己）'},
     {name:'刘谌',   cost:4, atk:4, hp:4, color:null,   skill:'liuchen',    desc:'血谏：阵亡时按骰色 —— 红=队友 +1 攻；蓝=原地召唤刘备；黄=不发动'},
     {name:'蒋琬',   cost:3, atk:3, hp:3, color:null,   skill:'jiangwan',   desc:'持重：结算开始己方 +1 粮；黄色回合 +2 粮'},
     {name:'费祎',   cost:2, atk:1, hp:4, color:null,   skill:'feiyi',      desc:'枢机：结算开始己方 +2 粮，主帅 +1 血'},
@@ -1869,9 +1869,10 @@ const Engine = {
                 const f = st.board[ll][ROW[side].home];
                 if(f && f !== u && (!hi || f.hp > hi.f.hp)) hi = { f: f, l: ll };
               }
-              if(hi && hi.f.atk > 1){
-                hi.f.atk -= 1;
-                this.skillLog(u, '壅蔽：我方后排 ' + hi.f.name + ' -1 攻');
+              if(hi){
+                hi.f.hp -= 1;
+                this.skillLog(u, '壅蔽：我方本营 ' + hi.f.name + ' -1 血');
+                if(hi.f.hp <= 0) this.kill(hi.l, ROW[side].home);
               }
               break;
             }
