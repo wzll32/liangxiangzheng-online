@@ -107,7 +107,8 @@
     content:'';position:absolute;inset:0;pointer-events:none;
     background:radial-gradient(ellipse at 18% 0%, var(--fac-glow), transparent 62%);
   }
-  .fcard.shu{--fac:var(--gold);--fac-glow:rgba(217,180,106,.10);}
+  .fcard.shu{--fac:#5aa87a;--fac-glow:rgba(90,168,122,.14);}
+.fcard.chan{--fac:#8fd3ae;--fac-glow:rgba(143,211,174,.16);}
   .fcard.wei{--fac:#c97f6d;--fac-glow:rgba(176,96,79,.14);}
   .fcard.wu{--fac:#7fa8c9;--fac-glow:rgba(90,127,168,.16);}
   .fcard.dong{--fac:#b08fc9;--fac-glow:rgba(159,134,192,.14);}
@@ -875,20 +876,24 @@ const CARD_POOL = {
     chan: [
     {name:'姜维',   cost:5, atk:5, hp:6, color:'blue', skill:'zhiji',      desc:'志继：蓝色时自身 +2 血、+1 攻'},
     {name:'诸葛瞻', cost:3, atk:1, hp:3, color:null,   skill:'zhugezhan',  desc:'三罪：黄=自+1血／蓝=自+1攻／红=己方战线将各+1血'},
-    {name:'黄皓',   cost:1, atk:4, hp:4, color:null,   skill:'huanghao',   desc:'壅蔽：结算开始己方后排血量最高者 -1 血（不含自己）'},
-    {name:'北地王', cost:3, atk:4, hp:4, color:null,   skill:'liuchen',    desc:'血谏：阵亡时己方全体 +1 攻，敌方主帅 -2 血'},
+    {name:'黄皓',   cost:2, atk:4, hp:4, color:null,   skill:'huanghao',   desc:'壅蔽：结算开始己方后排血量最高者 -1 血（不含自己）'},
+    {name:'刘谌',   cost:4, atk:4, hp:4, color:null,   skill:'liuchen',    desc:'血谏：阵亡时按骰色 —— 红=队友 +1 攻；蓝=原地召唤刘备；黄=己方本营武将 -1 攻（最低 1）'},
     {name:'蒋琬',   cost:3, atk:3, hp:3, color:null,   skill:'jiangwan',   desc:'持重：结算开始己方 +1 粮；黄色回合 +2 粮'},
     {name:'费祎',   cost:2, atk:1, hp:4, color:null,   skill:'feiyi',      desc:'枢机：结算开始己方 +2 粮，主帅 +1 血'},
     {name:'董允',   cost:2, atk:1, hp:3, color:null,   skill:'dongyun',    desc:'秉正：结算开始敌方战线随机一将 -1 攻'},
     {name:'马岱',   cost:3, atk:3, hp:5, color:null,   skill:'madai',      desc:'随势：红色时队友阵亡 → 马岱 +1 攻；黄色时队友阵亡 → 马岱 +2 血'},
     {name:'张翼',   cost:3, atk:2, hp:4, color:null,   skill:'zhangyi',    desc:'断后：阵亡时同线敌将 -1 血，己方主帅 +1 血'},
     {name:'张嶷',   cost:2, atk:2, hp:3, color:null,   skill:'zhangni',    desc:'逆锋：攻击伤害与反击伤害互换；第一次受到致命伤时保留 1 血'},
-    {name:'王平',   cost:3, atk:3, hp:5, color:null,   skill:'wangping',   desc:'镇守：在本营时结算开始己方全体 +1 血'},
+    {name:'王平',   cost:3, atk:3, hp:5, color:null,   skill:'wangping',   desc:'镇守：在本营时结算开始 —— 骰色为蓝或黄时，己方本营武将各 +1 血'},
     {name:'傅佥',   cost:3, atk:4, hp:3, color:null,   skill:'fuqian',     desc:'血勇：血量 ≤2 时攻击 +2'}
   ]
 };
 
 /* 技能名（日志格式：【技能名】谁：干了什么） */
+const EXTRA_CARDS = {
+  liubei: {name:'刘备', cost:3, atk:3, hp:5, color:'blue', skill:'rende',
+           desc:'仁德：蓝色时结算开始 —— 自己 +1 血；同线最靠前的敌将 +2 血（没有就不加）；随机一名队友 +1 攻'}
+};
 const SKILL_NAME = {
   double:'武圣', reflect:'燕人咆哮', wounded:'龙胆血怒', retaliate:'回敬反击',
   noCounter:'禁反', heroHeal:'回春', zhuge:'锦囊妙计', heroStrike:'直袭',
@@ -904,7 +909,7 @@ const SKILL_NAME = {
   floor3:'狂骨', niufu:'掠粮', houcheng:'血囷',
   zhugezhan:'三罪', zhiji:'志继', huanghao:'壅蔽',
   jiangwan:'持重', liuchen:'血谏', feiyi:'枢机', dongyun:'秉正', madai:'随势',
-  zhangyi:'断后', zhangni:'逆锋', wangping:'镇守', fuqian:'血勇',
+  zhangyi:'断后', zhangni:'逆锋', wangping:'镇守', fuqian:'血勇', rende:'仁德',
   tianfeng:'毒士', jushou:'缓兵', shenpei:'坚守', yanliang:'先锋',
   wenchou:'死战', zhanghe:'巧变', gaolan:'望楼', quyi:'先登死士',
   chunyuqiong:'宿将', guotu:'党争', gaogan:'死节', xuyou:'贪贿',
@@ -1249,15 +1254,32 @@ const Engine = {
     }
     /* 刘禅军亡语 */
     if(u.skill === 'liuchen'){
-      this.skillLog(u, '血谏：己方全体 +1 攻，敌方主帅 -2 血');
-      for(let l2=0; l2<CONFIG.LANES; l2++){
-        for(const r2 of [ROW[u.owner].front, ROW[u.owner].home]){
-          const f2 = st.board[l2][r2];
-          if(f2) f2.atk += 1;
+      const cid = st.color && st.color.id;
+      if(cid === 'blue'){
+        /* 蓝：原地召唤刘备 */
+        const lb = this.makeUnit(EXTRA_CARDS.liubei, u.owner);
+        lb.lane = lane; lb.row = row;
+        st.board[lane][row] = lb;
+        this.skillLog(u, '血谏：殉国，召唤刘备上场');
+      }else if(cid === 'yellow'){
+        /* 黄：己方本营武将 -1 攻（最低 1）—— 后方泄气 */
+        let n = 0;
+        for(let l2=0; l2<CONFIG.LANES; l2++){
+          const f2 = st.board[l2][ROW[u.owner].home];
+          if(f2 && f2.atk > 1){ f2.atk -= 1; n++; }
         }
+        this.skillLog(u, '血谏：殉国，己方本营 ' + n + ' 名武将 -1 攻');
+      }else{
+        /* 红（及无色）：队友 +1 攻 */
+        let n = 0;
+        for(let l2=0; l2<CONFIG.LANES; l2++){
+          for(const r2 of [ROW[u.owner].front, ROW[u.owner].home]){
+            const f2 = st.board[l2][r2];
+            if(f2){ f2.atk += 1; n++; }
+          }
+        }
+        this.skillLog(u, '血谏：殉国，己方 ' + n + ' 名武将 +1 攻');
       }
-      const foeL = u.owner === 'shu' ? 'wei' : 'shu';
-      this.hitHero(foeL, 2, u.owner);
     }
     if(u.skill === 'zhangyi'){
       this.skillLog(u, '断后：同线敌将 -1 血，己方主帅 +1 血');
@@ -1815,15 +1837,38 @@ const Engine = {
               break;
             }
             case 'wangping': {
-              if(r === ROW[side].home){
+              if(r === ROW[side].home && st.color && (st.color.id === 'blue' || st.color.id === 'yellow')){
+                let n = 0;
                 for(let l2=0; l2<CONFIG.LANES; l2++){
-                  for(const r2 of rows){
-                    const f2 = st.board[l2][r2];
-                    if(f2 && !this.healBlocked()){ f2.hp += 1; this.syncWounded(f2); }
-                  }
+                  const f2 = st.board[l2][ROW[side].home];
+                  if(f2 && !this.healBlocked()){ f2.hp += 1; this.syncWounded(f2); n++; }
                 }
-                this.skillLog(u, '镇守：己方全体 +1 血');
+                if(n) this.skillLog(u, '镇守：己方本营 ' + n + ' 名武将 +1 血');
               }
+              break;
+            }
+            case 'rende': {
+              if(!this.colorMatch(u)) break;
+              if(!this.healBlocked()){ u.hp += 1; }
+              /* 同线最靠前的敌将 +2 血（先看战线，没有再看本营） */
+              const foeR = side === 'shu' ? 'wei' : 'shu';
+              const t = st.board[l] && (st.board[l][ROW[foeR].front] || st.board[l][ROW[foeR].home]);
+              let extra = '';
+              if(t && !this.healBlocked()){ t.hp += 2; this.syncWounded(t); extra = '，' + t.name + ' +2 血'; }
+              /* 随机一名队友 +1 攻（不含自己） */
+              const mates = [];
+              for(let l3=0; l3<CONFIG.LANES; l3++){
+                for(const r3 of [ROW[side].front, ROW[side].home]){
+                  const f3 = st.board[l3][r3];
+                  if(f3 && f3 !== u) mates.push(f3);
+                }
+              }
+              if(mates.length){
+                const m3 = mates[rndInt(mates.length)];
+                m3.atk += 1;
+                extra += '，' + m3.name + ' +1 攻';
+              }
+              this.skillLog(u, '仁德：自己 +1 血' + extra);
               break;
             }
             case 'fuqian':
