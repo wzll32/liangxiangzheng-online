@@ -790,11 +790,11 @@ const CONFIG = {
  * skill：技能 id；desc：卡面说明 */
 const CARD_POOL = {
   shu: [
-    {name:'关羽',   cost:5, atk:5, hp:6, color:'red',    skill:'double',    desc:'打完之后，再打一次'},
-    {name:'张飞',   cost:5, atk:4, hp:7, color:'yellow', skill:'reflect',   desc:'被反击时，反击者也掉同样多的血'},
+    {name:'关羽',   cost:5, atk:5, hp:5, color:'red',    skill:'double',    desc:'打完之后，再打一次'},
+    {name:'张飞',   cost:5, atk:4, hp:6, color:'yellow', skill:'reflect',   desc:'被反击时，反击者也掉同样多的血'},
     {name:'赵云',   cost:4, atk:3, hp:6, color:null,     skill:'wounded',   desc:'血量低于3时，攻击力变成6'},
     {name:'马超',   cost:4, atk:3, hp:4, color:null,     skill:'retaliate', desc:'被反击后，回敬对方一次反击'},
-    {name:'黄忠',   cost:4, atk:4, hp:5, color:null,     skill:'noCounter', desc:'攻击时，对方不能反击'},
+    {name:'黄忠',   cost:4, atk:4, hp:5, color:'yellow', skill:'noCounter', desc:'黄色时攻击，对方不能反击'},
     {name:'简雍',   cost:2, atk:1, hp:3, color:null,     skill:'heroHeal',  desc:'出手前，给主帅回1点血'},
     {name:'诸葛亮', cost:3, atk:1, hp:2, color:'blue',   skill:'zhuge',     desc:'出手前：粮草+2；最低血将+2血；最低攻将+1攻'},
     {name:'魏延',   cost:3, atk:4, hp:4, color:'yellow', skill:'heroStrike',desc:'不打武将，直接打主帅；该线敌将会反击他'},
@@ -876,15 +876,15 @@ const CARD_POOL = {
     chan: [
     {name:'姜维',   cost:5, atk:5, hp:6, color:'blue', skill:'zhiji',      desc:'志继：蓝色时自身 +2 血、+1 攻'},
     {name:'诸葛瞻', cost:3, atk:1, hp:3, color:null,   skill:'zhugezhan',  desc:'三罪：黄=自+1血／蓝=自+1攻／红=己方战线将各+1血'},
-    {name:'黄皓',   cost:2, atk:4, hp:4, color:null,   skill:'huanghao',   desc:'壅蔽：结算开始己方后排血量最高者 -1 血（不含自己）'},
-    {name:'刘谌',   cost:4, atk:4, hp:4, color:null,   skill:'liuchen',    desc:'血谏：阵亡时按骰色 —— 红=队友 +1 攻；蓝=原地召唤刘备；黄=己方本营武将 -1 攻（最低 1）'},
+    {name:'黄皓',   cost:2, atk:4, hp:4, color:null,   skill:'huanghao',   desc:'壅蔽：黄色时结算开始，己方本营血量最高者 -1 攻（最低 1，不含自己）'},
+    {name:'刘谌',   cost:4, atk:4, hp:4, color:null,   skill:'liuchen',    desc:'血谏：阵亡时按骰色 —— 红=队友 +1 攻；蓝=原地召唤刘备；黄=不发动'},
     {name:'蒋琬',   cost:3, atk:3, hp:3, color:null,   skill:'jiangwan',   desc:'持重：结算开始己方 +1 粮；黄色回合 +2 粮'},
     {name:'费祎',   cost:2, atk:1, hp:4, color:null,   skill:'feiyi',      desc:'枢机：结算开始己方 +2 粮，主帅 +1 血'},
     {name:'董允',   cost:2, atk:1, hp:3, color:null,   skill:'dongyun',    desc:'秉正：结算开始敌方战线随机一将 -1 攻'},
     {name:'马岱',   cost:3, atk:3, hp:5, color:null,   skill:'madai',      desc:'随势：红色时队友阵亡 → 马岱 +1 攻；黄色时队友阵亡 → 马岱 +2 血'},
     {name:'张翼',   cost:3, atk:2, hp:4, color:null,   skill:'zhangyi',    desc:'断后：阵亡时同线敌将 -1 血，己方主帅 +1 血'},
     {name:'张嶷',   cost:2, atk:2, hp:3, color:null,   skill:'zhangni',    desc:'逆锋：攻击伤害与反击伤害互换；第一次受到致命伤时保留 1 血'},
-    {name:'王平',   cost:3, atk:3, hp:5, color:null,   skill:'wangping',   desc:'镇守：在本营时结算开始 —— 骰色为蓝或黄时，己方本营武将各 +1 血'},
+    {name:'王平',   cost:3, atk:3, hp:5, color:null,   skill:'wangping',   desc:'镇守：在本营时结算开始 —— 骰色为蓝或黄时，己方战线武将各 +1 血'},
     {name:'傅佥',   cost:3, atk:4, hp:3, color:null,   skill:'fuqian',     desc:'血勇：血量 ≤2 时攻击 +2'}
   ]
 };
@@ -892,7 +892,7 @@ const CARD_POOL = {
 /* 技能名（日志格式：【技能名】谁：干了什么） */
 const EXTRA_CARDS = {
   liubei: {name:'刘备', cost:3, atk:3, hp:5, color:'blue', skill:'rende',
-           desc:'仁德：蓝色时结算开始 —— 自己 +1 血；同线最靠前的敌将 +2 血（没有就不加）；随机一名队友 +1 攻'}
+           desc:'仁德：蓝色时结算开始 —— 自己 +1 血；同线最靠前的敌将 +1 血（没有就不加）；随机一名队友 +1 攻'}
 };
 const SKILL_NAME = {
   double:'武圣', reflect:'燕人咆哮', wounded:'龙胆血怒', retaliate:'回敬反击',
@@ -1262,13 +1262,7 @@ const Engine = {
         st.board[lane][row] = lb;
         this.skillLog(u, '血谏：殉国，召唤刘备上场');
       }else if(cid === 'yellow'){
-        /* 黄：己方本营武将 -1 攻（最低 1）—— 后方泄气 */
-        let n = 0;
-        for(let l2=0; l2<CONFIG.LANES; l2++){
-          const f2 = st.board[l2][ROW[u.owner].home];
-          if(f2 && f2.atk > 1){ f2.atk -= 1; n++; }
-        }
-        this.skillLog(u, '血谏：殉国，己方本营 ' + n + ' 名武将 -1 攻');
+        /* 黄：不发动 */
       }else{
         /* 红（及无色）：队友 +1 攻 */
         let n = 0;
@@ -1553,12 +1547,6 @@ const Engine = {
               break;
             case 'supply6': s.supply += 6; this.skillLog(u, '粮草+6'); break;
             case 'supply1': s.supply += 1; this.skillLog(u, '粮草+1'); break;
-            case 'frontHeal':
-              for(let ll=0; ll<CONFIG.LANES; ll++){
-                const f = st.board[ll][ROW[side].front];
-                if(f && !this.healBlocked()){ f.hp++; this.syncWounded(f); this.skillLog(u, f.name + ' +1血'); }
-              }
-              break;
             case 'zhuge': {
               s.supply += 2; this.skillLog(u, '粮草+2');
               let lowHp = null, lowAtk = null;
@@ -1840,10 +1828,10 @@ const Engine = {
               if(r === ROW[side].home && st.color && (st.color.id === 'blue' || st.color.id === 'yellow')){
                 let n = 0;
                 for(let l2=0; l2<CONFIG.LANES; l2++){
-                  const f2 = st.board[l2][ROW[side].home];
+                  const f2 = st.board[l2][ROW[side].front];
                   if(f2 && !this.healBlocked()){ f2.hp += 1; this.syncWounded(f2); n++; }
                 }
-                if(n) this.skillLog(u, '镇守：己方本营 ' + n + ' 名武将 +1 血');
+                if(n) this.skillLog(u, '镇守：己方战线 ' + n + ' 名武将 +1 血');
               }
               break;
             }
@@ -1854,7 +1842,7 @@ const Engine = {
               const foeR = side === 'shu' ? 'wei' : 'shu';
               const t = st.board[l] && (st.board[l][ROW[foeR].front] || st.board[l][ROW[foeR].home]);
               let extra = '';
-              if(t && !this.healBlocked()){ t.hp += 2; this.syncWounded(t); extra = '，' + t.name + ' +2 血'; }
+              if(t && !this.healBlocked()){ t.hp += 1; this.syncWounded(t); extra = '，' + t.name + ' +1 血'; }
               /* 随机一名队友 +1 攻（不含自己） */
               const mates = [];
               for(let l3=0; l3<CONFIG.LANES; l3++){
@@ -1875,15 +1863,15 @@ const Engine = {
               this.syncFuqian(u);
               break;
             case 'huanghao': {
+              if(!st.color || st.color.id !== 'yellow') break;
               let hi = null;
               for(let ll=0; ll<CONFIG.LANES; ll++){
                 const f = st.board[ll][ROW[side].home];
                 if(f && f !== u && (!hi || f.hp > hi.f.hp)) hi = { f: f, l: ll };
               }
-              if(hi){
-                hi.f.hp -= 1;
-                this.skillLog(u, '我方后排 ' + hi.f.name + ' -1 血');
-                if(hi.f.hp <= 0) this.kill(hi.l, ROW[side].home);
+              if(hi && hi.f.atk > 1){
+                hi.f.atk -= 1;
+                this.skillLog(u, '壅蔽：我方后排 ' + hi.f.name + ' -1 攻');
               }
               break;
             }
@@ -1946,6 +1934,20 @@ const Engine = {
   *resolveSideGen(atkSide){
     const st = this.state;
     const aRow = ROW[atkSide].front;
+    /* 法正【鼓舞】：只在自己这方的结算回合、出手之前回一次血（对方回合不触发） */
+    for(let lf=0; lf<CONFIG.LANES; lf++){
+      for(const rf of [ROW[atkSide].front, ROW[atkSide].home]){
+        const fz = st.board[lf][rf];
+        if(!fz || fz.skill !== 'frontHeal' || fz.healRound === st.round) continue;
+        fz.healRound = st.round;
+        let nf = 0;
+        for(let lh=0; lh<CONFIG.LANES; lh++){
+          const t = st.board[lh][aRow];
+          if(t && !this.healBlocked()){ t.hp += 1; this.syncWounded(t); nf++; }
+        }
+        if(nf) this.skillLog(fz, '鼓舞：己方战线 ' + nf + ' 名武将 +1 血');
+      }
+    }
     for(let lane=0; lane<CONFIG.LANES; lane++){
       const a = st.board[lane][aRow];
       if(!a || a.noAttack) continue;         // 本营的将不进攻；休战的将不出手
