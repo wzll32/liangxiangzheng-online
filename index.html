@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -396,6 +396,25 @@
   .net-tip{ font-size:13px; color:#8f96a3; min-height:20px; margin:6px 0; line-height:1.7; word-break:break-all; }
   .net-tip.ok{ color:#5fae7a; }
   .net-tip.bad{ color:#e05545; }
+  #netWait{
+    position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
+    background:rgba(10,12,16,.86); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+    flex-direction:column; gap:18px; cursor:progress;
+  }
+  #netWait[hidden]{ display:none; }
+  #netWaitText{
+    font:600 17px/1.6 "Microsoft YaHei",sans-serif; color:#e8e4dc; margin:0; text-align:center;
+    letter-spacing:.5px;
+  }
+  .netwait-box{ display:flex; flex-direction:column; align-items:center; gap:16px; padding:0 24px; }
+  .netwait-dots{ display:flex; gap:8px; }
+  .netwait-dots span{
+    width:9px; height:9px; border-radius:50%; background:#d9b46a; opacity:.35;
+    animation:netPulse 1.2s ease-in-out infinite;
+  }
+  .netwait-dots span:nth-child(2){ animation-delay:.18s; }
+  .netwait-dots span:nth-child(3){ animation-delay:.36s; }
+  @keyframes netPulse{ 0%,100%{ opacity:.25; transform:scale(.85); } 50%{ opacity:1; transform:scale(1); } }
   .turn-timer{
     font: 600 14px/1 ui-monospace, Consolas, monospace;
     color: #d9b46a; border: 1px solid rgba(217,180,106,.5);
@@ -658,6 +677,14 @@
     </div>
   </div>
 </section>
+
+<!-- 联机等待遮罩：对方在操作时把整页盖住 -->
+<div id="netWait" hidden>
+  <div class="netwait-box">
+    <div class="netwait-dots"><span></span><span></span><span></span></div>
+    <p id="netWaitText">等待中…</p>
+  </div>
+</div>
 
 <section id="pick" hidden>
   <h2 class="pick-title">选择势力</h2>
@@ -2564,6 +2591,18 @@ const NET = {
   },
   pushTimer: null,
   panel(show){ document.getElementById('netWrap').hidden = !show; },
+  /* 全屏灰罩：联机等人时挡住棋盘，避免对方误点 */
+  waiting(text){
+    const wrap = document.getElementById('netWait');
+    if(!wrap) return;
+    const t = document.getElementById('netWaitText');
+    if(t) t.textContent = text || '等待中…';
+    wrap.hidden = false;
+  },
+  waitOver(){
+    const wrap = document.getElementById('netWait');
+    if(wrap && !wrap.hidden) wrap.hidden = true;
+  },
   tip(text, cls){
     const el = document.getElementById('netTip');
     if(!el) return;
@@ -2678,6 +2717,7 @@ const NET = {
       UI.pick.enemy = null;
       UI.pick.netPick = true;
       UI.pickWarn = '';
+      this.waitOver();                                  // 轮到你了，放开灰罩
       UI.showScreen('pick');
       this.tip('房主选的是「' + (FACTION_NAME[msg.hostFaction] || msg.hostFaction) + '」，请选你自己的势力。', 'ok');
       return;
@@ -2868,7 +2908,9 @@ const UI = {
       }
       NET.connect('guest');
       NET.installGuestShim();          // 客人本地只读：点击一律发给房主去算
-      NET.tip('已连上，等房主开局后自动进入…', 'ok');
+      NET.panel(false);                // 进房后房间面板自动收起
+      NET.waiting('已加入房间 ' + code + '，等房主选势力…');
+      NET.tip('已连上房间 ' + code + '，房主开局后自动进入。', 'ok');
     });
     document.getElementById('pickBack').addEventListener('click', function(){ self.showScreen('cover'); });
     document.getElementById('pickStart').addEventListener('click', function(){
@@ -2876,6 +2918,7 @@ const UI = {
       if(p.netPick){
         if(!p.mine) return;
         NET.post('act', { op: '__pick', faction: p.mine });
+        NET.waiting('已经把你的选择发出去了，等房主开局…');
         NET.tip('已经把你的选择发给房主，等他把牌局推过来…', 'ok');
         return;
       }
@@ -2884,6 +2927,7 @@ const UI = {
         NET.hostFaction = p.mine;
         NET.awaitingPick = true;
         NET.say({ type: 'pickask', hostFaction: p.mine });
+        NET.waiting('已把选择权交给对手，等他选自己的势力…');
         NET.tip('已把选择权交给对手：他来选自己的势力，选完自动开局…', 'ok');
         return;
       }
@@ -2908,6 +2952,7 @@ const UI = {
     document.getElementById('app').hidden = (name === 'cover' || name === 'pick');
     if(name !== 'game') this.clearTutMarks();
     if(name === 'pick') this.renderPick();
+    if(name === 'game' && typeof NET !== 'undefined' && NET.waitOver) NET.waitOver();
   },
 
   renderPick(){
@@ -3355,15 +3400,17 @@ const UI = {
         this.flash('只能布置在己方空格（我·战线 / 我·本营）', true);
       }
     }else if(this.sel && this.sel.type === 'unit'){
-      if(lane !== this.sel.lane){
-        this.flash('不能换线：只能在本营与战线之间上下移动', true);
-      }else if(u && u.owner === this.me){
-        this.flash('同一条线上下两格都有武将时不能互换位置：先把其中一个移到空格', true);
+      if(u && u.owner === this.me){
+        // 点任何己方武将都直接改选它（换列也行），不再弹「不能换线」
         this.sel = {type:'unit', lane:lane, row:row}; this.msg = '';
+      }else if(lane !== this.sel.lane){
+        this.flash('不能换线：只能在本营与战线之间上下移动', true);
       }else if(own && !u){
         const r = Engine.moveUnit(this.me, lane, this.sel.row, row);
         if(r.ok){ this.sel = null; this.msg = ''; }
         else this.flash(r.reason, true);
+      }else if(u){
+        this.flash('这是敌方武将', true);
       }else{
         this.flash('目标格必须为空', true);
       }
